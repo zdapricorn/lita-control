@@ -42,6 +42,10 @@ button.btn:disabled{opacity:.4}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row > .grow{flex:1;min-width:0}
 canvas{width:100%;height:190px;display:block}
+.machine canvas{height:150px;margin-top:12px}
+.mhead{margin-bottom:10px;flex-wrap:nowrap}
+.mname{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#diag{white-space:pre-wrap}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
 label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
@@ -87,31 +91,13 @@ ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li
       <button class="btn primary grow" id="btnConnect">Kết nối máy</button>
       <button class="btn" id="btnDemo">Chạy thử</button>
     </div>
-    <p class="note" id="connectNote">Bật máy pha, đứng gần máy rồi bấm “Kết nối máy” và chọn thiết bị tên <b>WDG_Data_…</b>. Nếu không thấy, <a href="#" id="lnkAll" style="color:var(--accent)">hiện mọi thiết bị</a>.</p>
-  </div>
-
-  <div class="card">
-    <div class="grid">
-      <div class="tile p"><b id="vP">–</b><span>Áp suất (bar)</span></div>
-      <div class="tile f"><b id="vF">–</b><span>Lưu lượng (mL/s)</span></div>
-      <div class="tile"><b id="vV">–</b><span>Thể tích (mL)</span></div>
-      <div class="tile"><b id="vT">–</b><span>Thời gian (s)</span></div>
-      <div class="tile"><b id="vB">–</b><span>Nồi pha (°C)</span></div>
-      <div class="tile"><b id="vS">–</b><span>Nồi hơi (°C)</span></div>
+    <p class="note" id="connectNote">Bật máy pha, đứng gần máy rồi bấm “Kết nối máy” và chọn thiết bị tên <b>WDG_Data_…</b>. Nếu không thấy, <a href="#" id="lnkAll" style="color:var(--accent)">hiện mọi thiết bị</a>. Kết nối xong có thể bấm “Thêm máy” để nối máy thứ hai.</p>
+    <div class="row" id="allRow" style="display:none;margin-top:10px">
+      <button class="btn primary grow" id="btnBrewAll">Pha tất cả</button>
+      <button class="btn danger grow" id="btnStopAll">Dừng tất cả</button>
     </div>
   </div>
-
-  <div class="card">
-    <h2 id="chartTitle">Đường cong chiết</h2>
-    <canvas id="liveChart"></canvas>
-    <div class="legend"><span><i style="background:var(--p)"></i>Áp suất (bar)</span><span><i style="background:var(--f)"></i>Lưu lượng (mL/s)</span></div>
-  </div>
-
-  <div class="row">
-    <button class="btn primary grow" id="btnBrew" disabled>Bắt đầu pha</button>
-    <button class="btn" id="btnFlush" disabled>Xả rửa</button>
-  </div>
-  <p class="note">“Bắt đầu pha” chạy công thức đang chọn trên máy. Khi đang pha, nút này đổi thành “Dừng”.</p>
+  <div id="machines"></div>
 </section>
 
 <!-- ───────────── PROFILE ───────────── -->
@@ -126,6 +112,7 @@ ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li
     </div>
     <div class="card">
       <h2>Đọc từ máy</h2>
+      <select id="readMachine" style="margin-bottom:8px"></select>
       <div class="row">
         <div class="grow"><select id="readKey"><option value="1">Phím 1</option><option value="2">Phím 2</option><option value="3">Phím 3</option><option value="4">Phím 4</option></select></div>
         <button class="btn" id="btnReadKey">Đọc về</button>
@@ -159,6 +146,8 @@ ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li
     </div>
     <div class="card">
       <h2>Gửi sang máy</h2>
+      <label for="pTarget">Gửi tới</label>
+      <select id="pTarget" style="margin-bottom:10px"></select>
       <label for="pKey">Lưu vào phím nhanh</label>
       <select id="pKey"><option value="1">Phím 1</option><option value="2">Phím 2</option><option value="3">Phím 3</option><option value="4">Phím 4</option></select>
       <div class="row" style="margin-top:10px">
@@ -200,7 +189,8 @@ ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li
     <h2>Cách dùng</h2>
     <ul class="help">
       <li>Trên iPhone: cài <b>Bluefy</b> từ App Store, mở trang này trong Bluefy, rồi dùng “Thêm vào màn hình chính” nếu muốn có biểu tượng riêng.</li>
-      <li>Đóng app Wendougee chính hãng trên các thiết bị khác trước khi kết nối – máy chỉ nhận một kết nối Bluetooth mỗi lúc.</li>
+      <li>Đóng app Wendougee chính hãng trên các thiết bị khác trước khi kết nối – mỗi máy chỉ nhận một kết nối Bluetooth mỗi lúc.</li>
+      <li>Nối được tối đa 4 máy cùng lúc: bấm “Thêm máy” sau khi máy đầu đã kết nối. Mỗi máy có thẻ riêng; “Pha tất cả” / “Dừng tất cả” hiện ra khi có từ 2 máy. Dùng “Đổi tên” để phân biệt các máy.</li>
       <li>Mỗi lần pha dài hơn 5 giây được tự động ghi vào tab Lịch sử.</li>
     </ul>
   </div>
@@ -232,6 +222,7 @@ ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li
 <div id="toast"></div>
 <div id="modal"><div class="box">
   <h3 id="mTitle"></h3><p id="mText"></p>
+  <input id="mInput" maxlength="24" style="display:none;margin-bottom:16px">
   <div class="row"><button class="btn grow" id="mCancel">Huỷ</button><button class="btn primary grow" id="mOk">OK</button></div>
 </div></div>
 
@@ -384,13 +375,16 @@ function readProfile(link, key) {
 }
 
 /* ═════════════ Kết nối Bluetooth thật ═════════════ */
-function BleTransport() { this.onData = null; this.onDisconnect = null; this.name = ''; }
-BleTransport.prototype.connect = function (acceptAll) {
+function BleTransport() { this.onData = null; this.onDisconnect = null; this.name = ''; this.key = ''; }
+BleTransport.prototype.connect = function (acceptAll, isDup) {
   var self = this;
   var opts = acceptAll ? {acceptAllDevices: true, optionalServices: [SVC]}
                        : {filters: [{namePrefix: 'WDG'}], optionalServices: [SVC]};
   return navigator.bluetooth.requestDevice(opts).then(function (dev) {
-    self.dev = dev; self.name = dev.name || 'Thiết bị';
+    var key = dev.name || dev.id;
+    if (isDup && isDup(key)) { var err = new Error('Máy này đã được kết nối rồi.'); err.dup = true; throw err; }
+    self.dev = dev; self.key = key;
+    self.name = /^WDG_/.test(dev.name || '') ? 'Lita ' + dev.name.slice(-4) : (dev.name || 'Thiết bị');
     dev.addEventListener('gattserverdisconnected', function () { if (self.onDisconnect) self.onDisconnect(); });
     return dev.gatt.connect();
   }).then(function (server) { return server.getPrimaryService(SVC); })
@@ -414,8 +408,8 @@ BleTransport.prototype.write = function (bytes) {
 BleTransport.prototype.disconnect = function () { try { this.dev.gatt.disconnect(); } catch (e) {} };
 
 /* ═════════════ Máy giả lập (chế độ chạy thử) ═════════════ */
-function SimTransport() {
-  this.onData = null; this.onDisconnect = null; this.name = 'Máy giả lập';
+function SimTransport(n) {
+  this.onData = null; this.onDisconnect = null; this.name = 'Máy giả lập ' + n; this.key = 'sim' + n; this.n = n;
   this.regs = {}; this.brewing = false; this.flushUntil = 0; this.lastKey = 1;
   var self = this;
   sendProfileSync(this.regs, {stop: 'flow', total: 40, stages: [{time: 6, prio: 'p', value: 3, wait: 0}, {time: 30, prio: 'p', value: 9, wait: 0}]}, 1);
@@ -430,7 +424,7 @@ SimTransport.prototype.connect = function () { return Promise.resolve(); };
 SimTransport.prototype.disconnect = function () { clearInterval(this.timer); };
 SimTransport.prototype._tick = function () {
   var r = this.regs, now = Date.now();
-  r[1408] = 1255 + Math.round(Math.sin(now / 4000) * 4);
+  r[1408] = 1255 + this.n * 7 + Math.round(Math.sin(now / 4000) * 4);
   r[1409] = 925 + Math.round(Math.sin(now / 5300) * 3);
   if (now < this.flushUntil) { r[1422] = 5; return; }
   if (!this.brewing) { r[1410] = 0; r[1422] = 0; return; }
@@ -494,13 +488,15 @@ function toast(msg) {
   var t = $('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
 }
-function ask(title, text, okLabel, danger) {
+function ask(title, text, okLabel, danger, inputDefault) {
   return new Promise(function (resolve) {
     $('mTitle').textContent = title; $('mText').textContent = text;
     var ok = $('mOk'); ok.textContent = okLabel || 'OK'; ok.className = 'btn grow ' + (danger ? 'danger' : 'primary');
+    var inp = $('mInput'), hasInput = inputDefault !== undefined;
+    inp.style.display = hasInput ? '' : 'none'; if (hasInput) inp.value = inputDefault;
     $('modal').classList.add('show');
     var done = function (v) { $('modal').classList.remove('show'); ok.onclick = null; $('mCancel').onclick = null; resolve(v); };
-    ok.onclick = function () { done(true); }; $('mCancel').onclick = function () { done(false); };
+    ok.onclick = function () { done(hasInput ? inp.value.trim() : true); }; $('mCancel').onclick = function () { done(false); };
   });
 }
 function fmt(n, d) { return (n == null || isNaN(n)) ? '–' : n.toFixed(d).replace('.', ','); }
@@ -536,114 +532,194 @@ function shotSeries(samples) {
 }
 function xMaxFor(t) { return Math.max(30, Math.ceil((t + 2) / 10) * 10); }
 
-/* ═════════════ Trạng thái kết nối & đo lường ═════════════ */
-var link = null, transport = null, connected = false, pollFails = 0;
-var brewing = false, shot = null, lastDs = null, lastActive = 0, flushAt = 0, lastSentName = '';
-var liveSamples = [];
+/* ═════════════ Các máy đang kết nối ═════════════ */
+var machines = [], MAX_MACHINES = 4, simCount = 0, connecting = false;
+var names = load('lita.names', {});
 
-function setConnected(on, label, demo) {
-  connected = on;
-  var chip = $('connChip'); chip.textContent = label; chip.className = 'chip' + (on ? (demo ? ' demo' : ' on') : '');
-  $('btnBrew').disabled = !on; $('btnFlush').disabled = !on;
-  $('btnConnect').textContent = on ? 'Ngắt kết nối' : 'Kết nối máy';
-  $('btnConnect').className = 'btn grow' + (on ? '' : ' primary');
-  $('btnDemo').style.display = on ? 'none' : '';
-  $('connectNote').style.display = on ? 'none' : '';
-  if (!on) { ['vP', 'vF', 'vV', 'vT', 'vB', 'vS'].forEach(function (id) { $(id).textContent = '–'; }); setBrewing(false); }
+function Machine(tr, demo) {
+  this.tr = tr; this.link = new Link(tr); this.demo = demo; this.dead = false;
+  this.brewing = false; this.shot = null; this.lastDs = null; this.lastActive = 0; this.flushAt = 0;
+  this.lastSentName = ''; this.samples = []; this.fails = 0; this.diag = ''; this.ui = null;
 }
-function setBrewing(on) {
-  brewing = on;
-  var b = $('btnBrew'); b.textContent = on ? 'Dừng' : 'Bắt đầu pha'; b.className = 'btn grow ' + (on ? 'danger' : 'primary');
+Machine.prototype.label = function () { return names[this.tr.key] || this.tr.name; };
+
+function buildCard(m) {
+  var el = document.createElement('div'); el.className = 'card machine';
+  el.innerHTML =
+    '<div class="row mhead"><b class="mname grow"></b><span class="chip mstate"></span></div>' +
+    '<div class="grid">' +
+      '<div class="tile p"><b data-v="p">–</b><span>Áp suất (bar)</span></div>' +
+      '<div class="tile f"><b data-v="f">–</b><span>Lưu lượng (mL/s)</span></div>' +
+      '<div class="tile"><b data-v="v">–</b><span>Thể tích (mL)</span></div>' +
+      '<div class="tile"><b data-v="t">–</b><span>Thời gian (s)</span></div>' +
+      '<div class="tile"><b data-v="b">–</b><span>Nồi pha (°C)</span></div>' +
+      '<div class="tile"><b data-v="s">–</b><span>Nồi hơi (°C)</span></div>' +
+    '</div>' +
+    '<canvas class="mchart"></canvas>' +
+    '<div class="legend"><span><i style="background:var(--p)"></i>Áp suất (bar)</span><span><i style="background:var(--f)"></i>Lưu lượng (mL/s)</span></div>' +
+    '<div class="row" style="margin-top:12px"><button class="btn primary grow mbrew">Bắt đầu pha</button><button class="btn mflush">Xả rửa</button></div>' +
+    '<div class="row" style="margin-top:8px"><button class="btn small mrename">Đổi tên</button><span class="grow"></span><button class="btn small mclose">Ngắt kết nối</button></div>';
+  var q = function (s) { return el.querySelector(s); }, v = {};
+  ['p', 'f', 'v', 't', 'b', 's'].forEach(function (k) { v[k] = q('[data-v="' + k + '"]'); });
+  m.ui = {el: el, name: q('.mname'), state: q('.mstate'), brew: q('.mbrew'), chart: q('.mchart'), v: v};
+  m.ui.name.textContent = m.label();
+  q('.mbrew').onclick = function () { brewToggle(m); };
+  q('.mflush').onclick = function () {
+    ask('Xả rửa ' + m.label() + '?', 'Nước nóng sẽ chảy ra từ group head.', 'Xả').then(function (ok) {
+      if (!ok || m.dead) return;
+      m.flushAt = Date.now();
+      m.link.pressCoil(COIL_FLUSH).catch(function (e) { toast(m.label() + ': lệnh không tới máy – ' + e.message); });
+    });
+  };
+  q('.mrename').onclick = function () {
+    ask('Đổi tên máy', 'Tên này được nhớ cho lần kết nối sau.', 'Lưu', false, m.label()).then(function (name) {
+      if (name === false) return;
+      if (name) names[m.tr.key] = name; else delete names[m.tr.key];
+      save('lita.names', names); m.ui.name.textContent = m.label(); updateSummary();
+    });
+  };
+  q('.mclose').onclick = function () { removeMachine(m); };
+  $('machines').appendChild(el);
+  setBrewing(m, false);
+  drawChart(m.ui.chart, [], 30, 12);
 }
-function start(tr, demo, acceptAll) {
-  transport = tr; link = new Link(tr); pollFails = 0; lastDs = null;
-  tr.onDisconnect = function () { if (transport === tr) { teardown(); toast('Mất kết nối với máy.'); } };
-  $('connChip').textContent = 'Đang kết nối…';
-  return tr.connect(acceptAll).then(function () {
-    return link.readRegs(REG_TELEMETRY, TELEMETRY_LEN);
-  }).then(function (regs) {
-    setConnected(true, demo ? 'Chạy thử' : tr.name, demo);
-    onTelemetry(regs); poll(tr);
-  }).catch(function (e) {
-    teardown();
-    if (e && e.name === 'NotFoundError') return;             // người dùng huỷ hộp chọn thiết bị
-    toast('Không kết nối được: ' + (e && e.message ? e.message : e));
+function setBrewing(m, on) {
+  m.brewing = on;
+  if (!m.ui) return;
+  m.ui.brew.textContent = on ? 'Dừng' : 'Bắt đầu pha'; m.ui.brew.className = 'btn grow mbrew ' + (on ? 'danger' : 'primary');
+  m.ui.state.textContent = on ? 'Đang chiết' : (m.demo ? 'Chạy thử' : 'Sẵn sàng');
+  m.ui.state.className = 'chip mstate ' + (m.demo && !on ? 'demo' : 'on');
+}
+function pressBrew(m) {
+  return m.link.pressCoil(COIL_BREW).catch(function (e) { toast(m.label() + ': lệnh không tới máy – ' + e.message + '. Kiểm tra máy trước khi bấm lại.'); });
+}
+function brewToggle(m) {
+  if (m.brewing) return pressBrew(m);
+  ask('Bắt đầu pha trên ' + m.label() + '?', 'Máy sẽ bơm nước nóng ngay. Hãy chắc là tay pha đã lắp và cốc đã đặt.', 'Pha').then(function (ok) {
+    if (ok && !m.dead && !m.brewing) pressBrew(m);
   });
 }
-function teardown() {
-  var tr = transport; transport = null; link = null;
-  if (tr) tr.disconnect();
-  finishShot(); setConnected(false, 'Chưa kết nối');
+
+function updateSummary() {
+  var n = machines.length, chip = $('connChip'), full = n >= MAX_MACHINES;
+  chip.textContent = connecting ? 'Đang kết nối…' : (n ? n + ' máy' : 'Chưa kết nối');
+  chip.className = 'chip' + (n ? (machines.every(function (m) { return m.demo; }) ? ' demo' : ' on') : '');
+  $('btnConnect').textContent = n ? '+ Thêm máy' : 'Kết nối máy';
+  $('btnConnect').disabled = connecting || full; $('btnDemo').disabled = connecting || full;
+  $('connectNote').style.display = n ? 'none' : '';
+  $('allRow').style.display = n >= 2 ? '' : 'none';
+  fillMachineSelect($('pTarget'), true); fillMachineSelect($('readMachine'), false);
+  renderDiag();
 }
-function poll(tr) {
-  if (transport !== tr) return;
-  link.readRegs(REG_TELEMETRY, TELEMETRY_LEN).then(function (regs) {
-    pollFails = 0; if (transport === tr) onTelemetry(regs);
+function fillMachineSelect(sel, withAll) {
+  var prev = sel.value; sel.innerHTML = '';
+  var add = function (val, text) { var o = document.createElement('option'); o.value = val; o.textContent = text; sel.appendChild(o); };
+  if (!machines.length) add('', 'Chưa kết nối máy');
+  if (withAll && machines.length >= 2) add('*', 'Tất cả ' + machines.length + ' máy');
+  machines.forEach(function (m) { add(m.tr.key, m.label()); });
+  sel.disabled = !machines.length;
+  if (Array.prototype.some.call(sel.options, function (o) { return o.value === prev; })) sel.value = prev;
+}
+function targetsOf(sel) {
+  var v = sel.value;
+  return v === '*' ? machines.slice() : machines.filter(function (m) { return m.tr.key === v; });
+}
+function renderDiag() {
+  $('diag').textContent = machines.length ? machines.map(function (m) { return m.label() + ' – ' + m.diag; }).join('\n') : '–';
+}
+
+function addMachine(tr, demo, acceptAll) {
+  if (connecting) return;
+  if (machines.length >= MAX_MACHINES) return toast('Tối đa ' + MAX_MACHINES + ' máy cùng lúc.');
+  var m = new Machine(tr, demo);
+  connecting = true; updateSummary();
+  tr.connect(acceptAll, function (key) { return machines.some(function (x) { return x.tr.key === key; }); }).then(function () {
+    return m.link.readRegs(REG_TELEMETRY, TELEMETRY_LEN);
+  }).then(function (regs) {
+    connecting = false; machines.push(m); buildCard(m);
+    tr.onDisconnect = function () { if (!m.dead) { var n = m.label(); removeMachine(m); toast(n + ': mất kết nối.'); } };
+    onTelemetry(m, regs); poll(m); updateSummary();
+  }).catch(function (e) {
+    connecting = false; tr.onDisconnect = null; tr.disconnect(); updateSummary();
+    if (e && e.name === 'NotFoundError') return;             // người dùng huỷ hộp chọn thiết bị
+    toast(e && e.dup ? 'Máy này đã được kết nối rồi.' : 'Không kết nối được: ' + (e && e.message ? e.message : e));
+  });
+}
+function removeMachine(m) {
+  if (m.dead) return;
+  m.dead = true;
+  var i = machines.indexOf(m); if (i >= 0) machines.splice(i, 1);
+  m.tr.disconnect(); finishShot(m);
+  if (m.ui) m.ui.el.parentNode.removeChild(m.ui.el);
+  updateSummary();
+}
+function poll(m) {
+  if (m.dead) return;
+  m.link.readRegs(REG_TELEMETRY, TELEMETRY_LEN).then(function (regs) {
+    m.fails = 0; if (!m.dead) onTelemetry(m, regs);
   }, function (e) {
-    if (++pollFails === 8 && transport === tr) toast('Máy không phản hồi – thử ngắt và kết nối lại.');
-    $('diag').textContent = 'Lỗi đọc: ' + e.message;
-  }).then(function () { setTimeout(function () { poll(tr); }, 250); });
+    if (++m.fails === 8 && !m.dead) toast(m.label() + ' không phản hồi – thử ngắt và kết nối lại.');
+    m.diag = 'lỗi đọc: ' + e.message; renderDiag();
+  }).then(function () { setTimeout(function () { poll(m); }, 250); });
 }
-function onTelemetry(r) {
-  var ds = r[1], steam = r[4] / 10, brew = r[5] / 10, p = r[6] / 10, vol = r[7], secs = r[13], flow = r[18];
-  var now = Date.now();
-  $('vP').textContent = fmt(p, 1); $('vF').textContent = fmt(flow, 0); $('vV').textContent = fmt(vol, 0);
-  $('vT').textContent = fmt(ds / 10, 1); $('vB').textContent = fmt(brew, 1); $('vS').textContent = fmt(steam, 1);
-  $('diag').textContent = 'reg 1404+: ' + r.join(' ');
-  var flushing = now - flushAt < 15000;
-  var moving = lastDs !== null && ds !== lastDs && ds > 0;
+function onTelemetry(m, r) {
+  var ds = r[1], steam = r[4] / 10, brew = r[5] / 10, p = r[6] / 10, vol = r[7], flow = r[18];
+  var now = Date.now(), v = m.ui.v;
+  v.p.textContent = fmt(p, 1); v.f.textContent = fmt(flow, 0); v.v.textContent = fmt(vol, 0);
+  v.t.textContent = fmt(ds / 10, 1); v.b.textContent = fmt(brew, 1); v.s.textContent = fmt(steam, 1);
+  m.diag = 'reg 1404+: ' + r.join(' '); renderDiag();
+  var flushing = now - m.flushAt < 15000;
+  var moving = m.lastDs !== null && ds !== m.lastDs && ds > 0;
   var active = moving || p > 0;
-  lastDs = ds;
-  if (active) lastActive = now;
-  if (!shot && active && !flushing) {
-    shot = {start: now, samples: [], peak: 0, profile: lastSentName};
-    liveSamples = shot.samples; setBrewing(true); $('chartTitle').textContent = 'Đang chiết…';
+  m.lastDs = ds;
+  if (active) m.lastActive = now;
+  if (!m.shot && active && !flushing) {
+    m.shot = {start: now, samples: [], peak: 0, profile: m.lastSentName};
+    m.samples = m.shot.samples; setBrewing(m, true);
   }
-  if (shot) {
-    var t = Math.round((now - shot.start) / 100) / 10;
-    shot.samples.push([t, p, flow, vol]); shot.peak = Math.max(shot.peak, p); shot.vol = vol; shot.brewTemp = brew;
-    drawChart($('liveChart'), shotSeries(shot.samples), xMaxFor(t), 12);
-    if (now - lastActive > 2000) finishShot();
+  if (m.shot) {
+    var s = m.shot, t = Math.round((now - s.start) / 100) / 10;
+    s.samples.push([t, p, flow, vol]); s.peak = Math.max(s.peak, p); s.vol = vol; s.brewTemp = brew;
+    drawMachineChart(m);
+    if (now - m.lastActive > 2000) finishShot(m);
   }
 }
-function finishShot() {
-  if (!shot) return;
-  var s = shot; shot = null; setBrewing(false); $('chartTitle').textContent = 'Lần pha gần nhất';
+function drawMachineChart(m) {
+  var s = m.samples;
+  drawChart(m.ui.chart, shotSeries(s), xMaxFor(s.length ? s[s.length - 1][0] : 0), 12);
+}
+function finishShot(m) {
+  if (!m.shot) return;
+  var s = m.shot; m.shot = null; setBrewing(m, false);
   while (s.samples.length && s.samples[s.samples.length - 1][1] === 0 && s.samples[s.samples.length - 1][2] === 0) s.samples.pop();
   var dur = s.samples.length ? s.samples[s.samples.length - 1][0] : 0;
   if (dur < 5 || s.peak < 1) return;
-  shotLog.unshift({id: 'h' + s.start, date: s.start, profile: s.profile, duration: dur, volume: s.vol, peak: s.peak, brewTemp: s.brewTemp, note: '', samples: s.samples});
+  shotLog.unshift({id: 'h' + s.start + Math.floor(Math.random() * 1000), date: s.start, machine: m.label(), profile: s.profile,
+    duration: dur, volume: s.vol, peak: s.peak, brewTemp: s.brewTemp, note: '', samples: s.samples});
   if (shotLog.length > MAX_HISTORY) shotLog.length = MAX_HISTORY;
   save('lita.history', shotLog); renderHistory();
-  toast('Đã lưu lần pha vào Lịch sử.');
+  toast('Đã lưu lần pha trên ' + m.label() + ' vào Lịch sử.');
 }
 
-$('btnConnect').onclick = function () {
-  if (connected || transport) return teardown();
+function connectBle(acceptAll) {
   if (!navigator.bluetooth) return toast('Cần mở trang này bằng Bluefy để dùng Bluetooth.');
-  start(new BleTransport(), false, false);
-};
-$('lnkAll').onclick = function (e) {
-  e.preventDefault();
-  if (!navigator.bluetooth) return toast('Cần mở trang này bằng Bluefy để dùng Bluetooth.');
-  if (!transport) start(new BleTransport(), false, true);
-};
-$('btnDemo').onclick = function () { if (!transport) start(new SimTransport(), true); };
-$('btnBrew').onclick = function () {
-  if (!link) return;
-  var go = function () {
-    return link.pressCoil(COIL_BREW).catch(function (e) { toast('Lệnh không tới máy: ' + e.message + '. Kiểm tra máy trước khi bấm lại.'); });
-  };
-  if (brewing) return go();
-  ask('Bắt đầu pha?', 'Máy sẽ bơm nước nóng ngay. Hãy chắc là tay pha đã lắp và cốc đã đặt.', 'Pha').then(function (ok) { if (ok) go(); });
-};
-$('btnFlush').onclick = function () {
-  if (!link) return;
-  ask('Xả rửa group head?', 'Nước nóng sẽ chảy ra từ group head.', 'Xả').then(function (ok) {
+  addMachine(new BleTransport(), false, acceptAll);
+}
+$('btnConnect').onclick = function () { connectBle(false); };
+$('lnkAll').onclick = function (e) { e.preventDefault(); connectBle(true); };
+$('btnDemo').onclick = function () { addMachine(new SimTransport(++simCount), true); };
+$('btnBrewAll').onclick = function () {
+  var idle = machines.filter(function (m) { return !m.brewing; });
+  if (!idle.length) return toast('Tất cả các máy đều đang pha.');
+  ask('Pha trên ' + idle.length + ' máy?', idle.map(function (m) { return m.label(); }).join(', ') + ' sẽ bơm nước nóng ngay. Hãy chắc là tay pha đã lắp và cốc đã đặt ở từng máy.', 'Pha tất cả').then(function (ok) {
     if (!ok) return;
-    flushAt = Date.now();
-    link.pressCoil(COIL_FLUSH).catch(function (e) { toast('Lệnh không tới máy: ' + e.message); });
+    idle.forEach(function (m) { if (!m.dead && !m.brewing) pressBrew(m); });
   });
+};
+$('btnStopAll').onclick = function () {
+  var busy = machines.filter(function (m) { return m.brewing; });
+  if (!busy.length) return toast('Không có máy nào đang pha.');
+  busy.forEach(pressBrew);
 };
 
 /* ═════════════ Tab ═════════════ */
@@ -655,7 +731,7 @@ Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (
   };
 });
 function redraw() {
-  drawChart($('liveChart'), shotSeries(liveSamples), xMaxFor(liveSamples.length ? liveSamples[liveSamples.length - 1][0] : 0), 12);
+  machines.forEach(drawMachineChart);
   if (editing) drawProfileChart();
   if (viewing) drawHistChart();
 }
@@ -750,31 +826,37 @@ $('btnAddStage').onclick = function () {
   editing.stages.push({time: 10, prio: 'p', value: 6, wait: 0}); persistProfiles(); renderStages();
 };
 function doSend(andBrew) {
-  if (!link) return toast('Chưa kết nối máy.');
-  if (brewing) return toast('Máy đang pha – chờ xong rồi gửi.');
+  var ts = targetsOf($('pTarget'));
+  if (!ts.length) return toast('Chưa kết nối máy.');
+  var busy = ts.filter(function (m) { return m.brewing; });
+  if (busy.length) return toast(busy[0].label() + ' đang pha – chờ xong rồi gửi.');
   var p = editing, err = validateProfile(p);
   if (err) return toast(err);
-  var key = +$('pKey').value;
-  var text = 'Công thức hiện có ở Phím ' + key + ' trên máy sẽ bị ghi đè.' + (andBrew ? ' Sau đó máy bơm nước nóng ngay – hãy chắc là tay pha đã lắp và cốc đã đặt.' : '');
+  var key = +$('pKey').value, who = ts.length > 1 ? ts.length + ' máy' : ts[0].label();
+  var text = 'Công thức hiện có ở Phím ' + key + ' trên ' + who + ' sẽ bị ghi đè.' + (andBrew ? ' Sau đó máy bơm nước nóng ngay – hãy chắc là tay pha đã lắp và cốc đã đặt' + (ts.length > 1 ? ' ở từng máy.' : '.') : '');
   ask(andBrew ? 'Lưu vào Phím ' + key + ' và pha?' : 'Lưu vào Phím ' + key + '?', text, andBrew ? 'Lưu & pha' : 'Lưu').then(function (ok) {
     if (!ok) return;
-    var l = link;
-    sendProfile(l, p, key).then(function () {
-      lastSentName = p.name;
-      if (!andBrew) return toast('Đã lưu vào Phím ' + key + '.');
-      return sleep(90).then(function () { return l.pressCoil(COIL_BREW); }).then(function () {
-        document.querySelector('nav button[data-tab="live"]').click();
-      });
-    }).catch(function (e) { toast('Gửi không thành công: ' + e.message + '. Công thức trên máy có thể chỉ được ghi một phần – hãy gửi lại.'); });
+    Promise.all(ts.map(function (m) {
+      return sendProfile(m.link, p, key).then(function () {
+        m.lastSentName = p.name;
+        if (andBrew) return sleep(90).then(function () { return m.link.pressCoil(COIL_BREW); });
+      }).then(function () { return null; }, function (e) { return m.label() + ': ' + e.message; });
+    })).then(function (errs) {
+      var bad = errs.filter(Boolean);
+      if (bad.length) return toast('Gửi không thành công – ' + bad.join('; ') + '. Công thức trên máy đó có thể chỉ được ghi một phần – hãy gửi lại.');
+      if (andBrew) document.querySelector('nav button[data-tab="live"]').click();
+      else toast('Đã lưu vào Phím ' + key + ' trên ' + who + '.');
+    });
   });
 }
 $('btnSend').onclick = function () { doSend(false); };
 $('btnSendBrew').onclick = function () { doSend(true); };
 $('btnReadKey').onclick = function () {
-  if (!link) return toast('Chưa kết nối máy.');
+  var m = targetsOf($('readMachine'))[0];
+  if (!m) return toast('Chưa kết nối máy.');
   var key = +$('readKey').value;
-  readProfile(link, key).then(function (res) {
-    var p = res.profile; p.id = 'p' + Date.now(); p.name = 'Từ máy – Phím ' + key; p.key = key;
+  readProfile(m.link, key).then(function (res) {
+    var p = res.profile; p.id = 'p' + Date.now(); p.name = m.label() + ' – Phím ' + key; p.key = key;
     profiles.push(p); persistProfiles(); openProfile(p);
     if (!res.standard) toast('Phím này đang lưu kiểu công thức khác (không phải biến áp nhiều giai đoạn) – số liệu hiển thị có thể không đúng.');
   }).catch(function (e) { toast('Không đọc được: ' + e.message); });
@@ -792,7 +874,7 @@ function renderHistory() {
   shotLog.forEach(function (h) {
     var el = document.createElement('div'); el.className = 'item';
     el.innerHTML = '<div class="grow"><div class="t"></div><div class="s"></div></div><button class="btn small">Xem</button>';
-    el.querySelector('.t').textContent = dateStr(h.date) + (h.profile ? ' · ' + h.profile : '');
+    el.querySelector('.t').textContent = dateStr(h.date) + (h.machine ? ' · ' + h.machine : '') + (h.profile ? ' · ' + h.profile : '');
     el.querySelector('.s').textContent = fmt(h.duration, 1) + ' s · ' + h.volume + ' mL · đỉnh ' + fmt(h.peak, 1) + ' bar' + (h.note ? ' · ' + h.note : '');
     el.querySelector('button').onclick = function () { openShot(h); };
     box.appendChild(el);
@@ -800,7 +882,7 @@ function renderHistory() {
 }
 function openShot(h) {
   viewing = h; $('histList').style.display = 'none'; $('histDetail').style.display = '';
-  $('hTitle').textContent = dateStr(h.date) + (h.profile ? ' · ' + h.profile : '');
+  $('hTitle').textContent = dateStr(h.date) + (h.machine ? ' · ' + h.machine : '') + (h.profile ? ' · ' + h.profile : '');
   $('hSub').textContent = fmt(h.duration, 1) + ' s · ' + h.volume + ' mL · đỉnh ' + fmt(h.peak, 1) + ' bar · nồi pha ' + fmt(h.brewTemp, 1) + ' °C';
   $('hNote').value = h.note || ''; drawHistChart();
 }
@@ -828,7 +910,7 @@ $('btnHistCsv').onclick = function () {
 
 /* ═════════════ Khởi động ═════════════ */
 if (!navigator.bluetooth) $('noBle').style.display = '';
-renderProfiles(); renderHistory(); redraw();
+renderProfiles(); renderHistory(); updateSummary();
 window.Lita = {crc16: crc16, frame: frame, hex: hex, encodeProfile: encodeProfile, decodeProfile: decodeProfile, validateProfile: validateProfile};
 </script>
 </body>
