@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#17120f">
+<title>Lita Control</title>
+<style>
+:root{
+  --bg:#17120f; --card:#231c17; --card2:#2e251f; --line:#3d322a;
+  --text:#f3ebe3; --muted:#a8998b; --accent:#e0a458; --accent-ink:#1d1509;
+  --p:#f08a5d; --f:#5db7f0; --ok:#6fcf8e; --bad:#ef6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+body{display:flex;flex-direction:column}
+header{padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;flex:1}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--card2);color:var(--muted);white-space:nowrap}
+.chip.on{background:rgba(111,207,142,.16);color:var(--ok)}
+.chip.demo{background:rgba(224,164,88,.18);color:var(--accent)}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 24px}
+section{display:none} section.active{display:block}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--muted);padding:12px 4px;font-size:13px;font-weight:600}
+nav button.active{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tile{background:var(--card2);border-radius:10px;padding:10px 8px;text-align:center}
+.tile b{display:block;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile span{font-size:11px;color:var(--muted)}
+.tile.p b{color:var(--p)} .tile.f b{color:var(--f)}
+button.btn{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--text);
+  border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600;min-height:46px}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn.danger{background:var(--bad);border-color:var(--bad);color:#2a0c0c}
+button.btn.small{padding:6px 10px;min-height:34px;font-size:14px}
+button.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row > .grow{flex:1;min-width:0}
+canvas{width:100%;height:190px;display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+input,select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:16px;min-height:42px}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.warn{background:rgba(239,107,107,.12);border:1px solid rgba(239,107,107,.4);color:#ffc9c9;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .grow{flex:1;min-width:0}
+.item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .s{font-size:12px;color:var(--muted)}
+.stage{background:var(--card2);border-radius:10px;padding:10px;margin-bottom:8px}
+.stage .head{display:flex;align-items:center;margin-bottom:8px;font-size:13px;color:var(--muted);font-weight:600}
+.stage .head span{flex:1}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cols4{display:grid;grid-template-columns:1fr 1.3fr 1fr 1fr;gap:6px}
+.cols4 input,.cols4 select{padding:8px 6px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:#000;color:#fff;border-radius:10px;padding:12px 14px;font-size:14px;
+  opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:30;text-align:center}
+#toast.show{opacity:.94;transform:none}
+#modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:24px;z-index:40}
+#modal.show{display:flex}
+#modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:340px;width:100%}
+#modal h3{margin:0 0 8px;font-size:17px}
+#modal p{margin:0 0 16px;color:var(--muted);font-size:14px}
+ul.help{padding-left:18px;margin:0;font-size:14px;color:var(--muted)} ul.help li{margin-bottom:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lita Control</h1>
+  <span id="connChip" class="chip">Chưa kết nối</span>
+</header>
+
+<main>
+<!-- ───────────── MÁY ───────────── -->
+<section id="tab-live" class="active">
+  <div id="noBle" class="warn" style="display:none">
+    Trình duyệt này không hỗ trợ Web Bluetooth. Trên iPhone hãy mở trang này bằng ứng dụng <b>Bluefy</b> (miễn phí trên App Store). Bạn vẫn có thể bấm “Chạy thử” để xem giao diện.
+  </div>
+  <div class="card" id="connectCard">
+    <div class="row">
+      <button class="btn primary grow" id="btnConnect">Kết nối máy</button>
+      <button class="btn" id="btnDemo">Chạy thử</button>
+    </div>
+    <p class="note" id="connectNote">Bật máy pha, đứng gần máy rồi bấm “Kết nối máy” và chọn thiết bị tên <b>WDG_Data_…</b>. Nếu không thấy, <a href="#" id="lnkAll" style="color:var(--accent)">hiện mọi thiết bị</a>.</p>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="tile p"><b id="vP">–</b><span>Áp suất (bar)</span></div>
+      <div class="tile f"><b id="vF">–</b><span>Lưu lượng (mL/s)</span></div>
+      <div class="tile"><b id="vV">–</b><span>Thể tích (mL)</span></div>
+      <div class="tile"><b id="vT">–</b><span>Thời gian (s)</span></div>
+      <div class="tile"><b id="vB">–</b><span>Nồi pha (°C)</span></div>
+      <div class="tile"><b id="vS">–</b><span>Nồi hơi (°C)</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="chartTitle">Đường cong chiết</h2>
+    <canvas id="liveChart"></canvas>
+    <div class="legend"><span><i style="background:var(--p)"></i>Áp suất (bar)</span><span><i style="background:var(--f)"></i>Lưu lượng (mL/s)</span></div>
+  </div>
+
+  <div class="row">
+    <button class="btn primary grow" id="btnBrew" disabled>Bắt đầu pha</button>
+    <button class="btn" id="btnFlush" disabled>Xả rửa</button>
+  </div>
+  <p class="note">“Bắt đầu pha” chạy công thức đang chọn trên máy. Khi đang pha, nút này đổi thành “Dừng”.</p>
+</section>
+
+<!-- ───────────── PROFILE ───────────── -->
+<section id="tab-profiles">
+  <div id="profileList">
+    <div class="card">
+      <h2>Công thức của tôi</h2>
+      <div id="profileItems"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary grow" id="btnNewProfile">+ Công thức mới</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Đọc từ máy</h2>
+      <div class="row">
+        <div class="grow"><select id="readKey"><option value="1">Phím 1</option><option value="2">Phím 2</option><option value="3">Phím 3</option><option value="4">Phím 4</option></select></div>
+        <button class="btn" id="btnReadKey">Đọc về</button>
+      </div>
+      <p class="note">Lấy công thức đang lưu ở một phím nhanh trên máy về để xem hoặc sửa.</p>
+    </div>
+  </div>
+
+  <div id="profileEdit" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn small" id="btnBack">‹ Danh sách</button>
+        <span class="grow"></span>
+        <button class="btn small" id="btnDelProfile">Xoá</button>
+      </div>
+      <label for="pName">Tên công thức</label>
+      <input id="pName" maxlength="40">
+      <div class="cols" style="margin-top:10px">
+        <div><label for="pStop">Dừng theo</label>
+          <select id="pStop"><option value="flow">Thể tích (mL)</option><option value="weight">Khối lượng (g) – cần cân</option></select></div>
+        <div><label for="pTotal" id="pTotalLbl">Tổng thể tích (mL)</label>
+          <input id="pTotal" type="number" inputmode="numeric" min="1" max="300"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Các giai đoạn</h2>
+      <div id="stages"></div>
+      <button class="btn small" id="btnAddStage">+ Thêm giai đoạn</button>
+      <canvas id="profChart" style="height:140px;margin-top:12px"></canvas>
+      <div class="legend"><span><i style="background:var(--p)"></i>Áp suất đặt</span><span><i style="background:var(--f)"></i>Lưu lượng đặt</span></div>
+    </div>
+    <div class="card">
+      <h2>Gửi sang máy</h2>
+      <label for="pKey">Lưu vào phím nhanh</label>
+      <select id="pKey"><option value="1">Phím 1</option><option value="2">Phím 2</option><option value="3">Phím 3</option><option value="4">Phím 4</option></select>
+      <div class="row" style="margin-top:10px">
+        <button class="btn grow" id="btnSend">Lưu vào máy</button>
+        <button class="btn primary grow" id="btnSendBrew">Lưu &amp; pha</button>
+      </div>
+      <p class="note">Công thức được lưu trên điện thoại tự động khi bạn sửa.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── LỊCH SỬ ───────────── -->
+<section id="tab-shotLog">
+  <div id="histList" class="card">
+    <h2>Các lần pha</h2>
+    <div id="histItems"></div>
+  </div>
+  <div id="histDetail" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn small" id="btnHistBack">‹ Danh sách</button>
+        <span class="grow"></span>
+        <button class="btn small" id="btnHistCsv">Chép CSV</button>
+        <button class="btn small" id="btnHistDel">Xoá</button>
+      </div>
+      <div class="t" id="hTitle" style="font-weight:600"></div>
+      <div class="s note" id="hSub" style="margin:2px 0 10px"></div>
+      <canvas id="histChart"></canvas>
+      <div class="legend"><span><i style="background:var(--p)"></i>Áp suất (bar)</span><span><i style="background:var(--f)"></i>Lưu lượng (mL/s)</span></div>
+      <label for="hNote" style="margin-top:12px">Ghi chú (hạt, cỡ xay, vị…)</label>
+      <input id="hNote" maxlength="120">
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── TRỢ GIÚP ───────────── -->
+<section id="tab-help">
+  <div class="card">
+    <h2>Cách dùng</h2>
+    <ul class="help">
+      <li>Trên iPhone: cài <b>Bluefy</b> từ App Store, mở trang này trong Bluefy, rồi dùng “Thêm vào màn hình chính” nếu muốn có biểu tượng riêng.</li>
+      <li>Đóng app Wendougee chính hãng trên các thiết bị khác trước khi kết nối – máy chỉ nhận một kết nối Bluetooth mỗi lúc.</li>
+      <li>Mỗi lần pha dài hơn 5 giây được tự động ghi vào tab Lịch sử.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Giới hạn cần biết</h2>
+    <ul class="help">
+      <li>Đây là ứng dụng độc lập, không phải của Wendougee. Nó dùng giao thức Bluetooth do cộng đồng giải mã (dự án LitaLite), đã xác nhận trên LITA-BA.</li>
+      <li>Chỉ soạn được công thức biến áp nhiều giai đoạn. Chế độ “tự do biến áp” và cài đặt nhiệt độ nồi hơi chưa hỗ trợ.</li>
+      <li>“Lưu &amp; pha” mới được xác nhận với Phím 1. Với phím khác, hãy lưu rồi bấm phím đó trên máy.</li>
+      <li>Vòi hơi là cơ khí, không điều khiển được qua Bluetooth.</li>
+      <li>Lưu lượng máy báo về là số nguyên mL/s nên đường lưu lượng có dạng bậc thang.</li>
+      <li>Công thức và lịch sử nằm trong bộ nhớ của trình duyệt trên máy này; xoá dữ liệu Bluefy sẽ mất.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Chẩn đoán</h2>
+    <div class="note" id="diag" style="margin:0;font-family:Menlo,monospace;font-size:12px;word-break:break-all">–</div>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-tab="live" class="active">Máy</button>
+  <button data-tab="profiles">Công thức</button>
+  <button data-tab="shotLog">Lịch sử</button>
+  <button data-tab="help">Trợ giúp</button>
+</nav>
+
+<div id="toast"></div>
+<div id="modal"><div class="box">
+  <h3 id="mTitle"></h3><p id="mText"></p>
+  <div class="row"><button class="btn grow" id="mCancel">Huỷ</button><button class="btn primary grow" id="mOk">OK</button></div>
+</div></div>
+
+<script>
+'use strict';
+/* ═════════════ Giao thức: Modbus RTU qua BLE ═════════════ */
+var SVC    = '00010203-0405-0607-0809-0a0b0c0d1910';
+var CH_MB  = '00010203-0405-0607-0809-0a0b0c0d2b10';
+var REG_TELEMETRY = 1404, TELEMETRY_LEN = 20;
+var REG_MODE = 87, COIL_BREW = 150, COIL_FLUSH = 155;
+var KEY_BASE = {1: 2048, 2: 2560, 3: 3048, 4: 3560};
+var MAX_STAGES = 8;
+
+function crc16(bytes) {
+  var crc = 0xFFFF;
+  for (var i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i];
+    for (var k = 0; k < 8; k++) crc = (crc & 1) ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
+  }
+  return crc;
+}
+function frame(body) {
+  var c = crc16(body), out = new Uint8Array(body.length + 2);
+  out.set(body); out[body.length] = c & 0xFF; out[body.length + 1] = c >> 8;
+  return out;
+}
+function hex(bytes) { return Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+/* Hàng đợi yêu cầu: gửi một khung, chờ đúng một phản hồi. */
+function Link(transport) {
+  this.t = transport; this.chain = Promise.resolve(); this.pending = null; this.rx = [];
+  var self = this;
+  transport.onData = function (bytes) { self._onData(bytes); };
+}
+Link.prototype._onData = function (bytes) {
+  var p = this.pending; if (!p) return;
+  for (var i = 0; i < bytes.length; i++) this.rx.push(bytes[i]);
+  while (this.rx.length && this.rx[0] !== 0x01) this.rx.shift();
+  var rx = this.rx;
+  if (rx.length >= 5 && rx[1] === (p.func | 0x80)) return this._finish(new Error('Máy từ chối lệnh (mã ' + rx[2] + ')'));
+  if (rx.length < p.expect) return;
+  var f = rx.slice(0, p.expect), c = crc16(f.slice(0, -2));
+  if (f[1] !== p.func || f[p.expect - 2] !== (c & 0xFF) || f[p.expect - 1] !== (c >> 8)) return this._finish(new Error('Phản hồi lỗi CRC'));
+  this._finish(null, f);
+};
+Link.prototype._finish = function (err, data) {
+  var p = this.pending; if (!p) return;
+  this.pending = null; clearTimeout(p.timer);
+  if (err) p.reject(err); else p.resolve(data);
+};
+Link.prototype._once = function (body, expect) {
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    self.rx = [];
+    self.pending = {func: body[1], expect: expect, resolve: resolve, reject: reject,
+      timer: setTimeout(function () { self._finish(new Error('Máy không phản hồi')); }, 1500)};
+    Promise.resolve(self.t.write(frame(body))).catch(function (e) { self._finish(e); });
+  });
+};
+Link.prototype.request = function (body, expect, retry) {
+  var self = this;
+  var run = function () {
+    return self._once(body, expect).catch(function (e) {
+      if (!retry) throw e;
+      return sleep(80).then(function () { return self._once(body, expect); });
+    });
+  };
+  var p = this.chain.then(run, run);
+  this.chain = p.catch(function () {});
+  return p;
+};
+Link.prototype.readRegs = function (addr, qty) {
+  return this.request([1, 3, addr >> 8, addr & 255, 0, qty], 5 + qty * 2, true).then(function (f) {
+    var out = [];
+    for (var i = 0; i < qty; i++) out.push((f[3 + i * 2] << 8) | f[4 + i * 2]);
+    return out;
+  });
+};
+Link.prototype.writeReg = function (addr, val) {
+  return this.request([1, 6, addr >> 8, addr & 255, val >> 8, val & 255], 8, true);
+};
+Link.prototype.writeRegs = function (addr, vals) {
+  var body = [1, 0x10, addr >> 8, addr & 255, 0, vals.length, vals.length * 2];
+  vals.forEach(function (v) { body.push(v >> 8, v & 255); });
+  return this.request(body, 8, true);
+};
+/* Một lần “bấm nút”: bật rồi nhả coil. Không gửi lại khi lỗi vì coil 150 là nút bật/tắt. */
+Link.prototype.pressCoil = function (addr) {
+  var self = this;
+  return this.request([1, 5, addr >> 8, addr & 255, 0xFF, 0], 8, false).then(function () {
+    return sleep(40);
+  }).then(function () {
+    return self.request([1, 5, addr >> 8, addr & 255, 0, 0], 8, false);
+  });
+};
+
+/* ═════════════ Mã hoá công thức ═════════════ */
+function encodeProfile(p) {
+  var weight = p.stop === 'weight';
+  var header = [weight ? 0 : 1, 1, 1, 1, weight ? 0 : p.total, weight ? p.total : 0, 0];
+  var stages = p.stages.map(function (s, i) {
+    var last = i === p.stages.length - 1, v = Math.round(s.value * 10);
+    return [s.time, s.prio === 'p' ? v : 0, s.prio === 'f' ? v : 0, last ? 0 : s.wait, last ? 1 : 0, s.prio === 'f' ? 1 : 0];
+  });
+  return {header: header, stages: stages, mode: weight ? 3 : 2};
+}
+function decodeProfile(header, stages) {
+  var weight = header[0] === 0;
+  return {
+    stop: weight ? 'weight' : 'flow', total: weight ? header[5] : header[4],
+    stages: stages.map(function (r) {
+      var f = r[5] === 1;
+      return {time: r[0], prio: f ? 'f' : 'p', value: (f ? r[2] : r[1]) / 10, wait: r[3]};
+    })
+  };
+}
+function validateProfile(p) {
+  if (!p.stages.length) return 'Cần ít nhất một giai đoạn.';
+  if (!(p.total >= 1 && p.total <= 300) || p.total !== Math.round(p.total)) return 'Tổng thể tích/khối lượng phải là số nguyên từ 1 đến 300.';
+  for (var i = 0; i < p.stages.length; i++) {
+    var s = p.stages[i], n = 'Giai đoạn ' + (i + 1) + ': ';
+    if (!(s.time >= 1 && s.time <= 120) || s.time !== Math.round(s.time)) return n + 'thời gian phải là số nguyên 1–120 giây.';
+    if (s.prio === 'p' && !(s.value >= 0.5 && s.value <= 12)) return n + 'áp suất phải từ 0,5 đến 12 bar.';
+    if (s.prio === 'f' && !(s.value >= 0.1 && s.value <= 10)) return n + 'lưu lượng phải từ 0,1 đến 10 mL/s.';
+    if (!(s.wait >= 0 && s.wait <= 60) || s.wait !== Math.round(s.wait)) return n + 'thời gian nghỉ phải là số nguyên 0–60 giây.';
+  }
+  return null;
+}
+function sendProfile(link, p, key) {
+  var enc = encodeProfile(p), base = KEY_BASE[key];
+  var seq = link.writeRegs(base, enc.header);
+  enc.stages.forEach(function (st, i) {
+    seq = seq.then(function () { return sleep(40); }).then(function () { return link.writeRegs(base + 8 + i * 9, st); });
+  });
+  return seq.then(function () { return sleep(40); }).then(function () { return link.writeReg(REG_MODE, enc.mode); });
+}
+function readProfile(link, key) {
+  var base = KEY_BASE[key], header, stages = [];
+  var next = function (i) {
+    return link.readRegs(base + 8 + i * 9, 6).then(function (r) {
+      stages.push(r);
+      if (r[4] === 1 || i + 1 >= MAX_STAGES) return null;
+      return next(i + 1);
+    });
+  };
+  return link.readRegs(base, 7).then(function (h) { header = h; return next(0); }).then(function () {
+    return {profile: decodeProfile(header, stages), standard: header[1] === 1 && header[2] === 1};
+  });
+}
+
+/* ═════════════ Kết nối Bluetooth thật ═════════════ */
+function BleTransport() { this.onData = null; this.onDisconnect = null; this.name = ''; }
+BleTransport.prototype.connect = function (acceptAll) {
+  var self = this;
+  var opts = acceptAll ? {acceptAllDevices: true, optionalServices: [SVC]}
+                       : {filters: [{namePrefix: 'WDG'}], optionalServices: [SVC]};
+  return navigator.bluetooth.requestDevice(opts).then(function (dev) {
+    self.dev = dev; self.name = dev.name || 'Thiết bị';
+    dev.addEventListener('gattserverdisconnected', function () { if (self.onDisconnect) self.onDisconnect(); });
+    return dev.gatt.connect();
+  }).then(function (server) { return server.getPrimaryService(SVC); })
+    .then(function (svc) { return svc.getCharacteristic(CH_MB); })
+    .then(function (ch) {
+      self.ch = ch;
+      ch.addEventListener('characteristicvaluechanged', function (e) {
+        var v = e.target.value;
+        if (self.onData) self.onData(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
+      });
+      return ch.startNotifications();
+    });
+};
+BleTransport.prototype.write = function (bytes) {
+  var ch = this.ch;
+  if (ch.writeValueWithoutResponse) {
+    return ch.writeValueWithoutResponse(bytes).catch(function () { return ch.writeValue(bytes); });
+  }
+  return ch.writeValue(bytes);
+};
+BleTransport.prototype.disconnect = function () { try { this.dev.gatt.disconnect(); } catch (e) {} };
+
+/* ═════════════ Máy giả lập (chế độ chạy thử) ═════════════ */
+function SimTransport() {
+  this.onData = null; this.onDisconnect = null; this.name = 'Máy giả lập';
+  this.regs = {}; this.brewing = false; this.flushUntil = 0; this.lastKey = 1;
+  var self = this;
+  sendProfileSync(this.regs, {stop: 'flow', total: 40, stages: [{time: 6, prio: 'p', value: 3, wait: 0}, {time: 30, prio: 'p', value: 9, wait: 0}]}, 1);
+  this.timer = setInterval(function () { self._tick(); }, 100);
+}
+function sendProfileSync(regs, p, key) {
+  var enc = encodeProfile(p), base = KEY_BASE[key];
+  enc.header.forEach(function (v, i) { regs[base + i] = v; });
+  enc.stages.forEach(function (st, i) { st.forEach(function (v, j) { regs[base + 8 + i * 9 + j] = v; }); });
+}
+SimTransport.prototype.connect = function () { return Promise.resolve(); };
+SimTransport.prototype.disconnect = function () { clearInterval(this.timer); };
+SimTransport.prototype._tick = function () {
+  var r = this.regs, now = Date.now();
+  r[1408] = 1255 + Math.round(Math.sin(now / 4000) * 4);
+  r[1409] = 925 + Math.round(Math.sin(now / 5300) * 3);
+  if (now < this.flushUntil) { r[1422] = 5; return; }
+  if (!this.brewing) { r[1410] = 0; r[1422] = 0; return; }
+  var t = (now - this.t0) / 1000, base = KEY_BASE[this.lastKey], total = r[base + 4] || r[base + 5] || 40;
+  var acc = 0, target = null;
+  for (var i = 0; i < MAX_STAGES; i++) {
+    var o = base + 8 + i * 9, dur = r[o] || 0;
+    if (t < acc + dur) { target = {p: (r[o + 1] || 0) / 10, f: (r[o + 2] || 0) / 10, flow: r[o + 5] === 1}; break; }
+    acc += dur + (r[o + 3] || 0);
+    if (t < acc) { target = {p: 0, f: 0, flow: false}; break; }
+    if (r[o + 4] === 1) break;
+  }
+  if (!target || this.vol >= total) { this.brewing = false; r[1410] = 0; r[1422] = 0; return; }
+  var tp = target.flow ? 5 : target.p, tf = target.flow ? target.f : target.p * 0.22;
+  this.p += (tp - this.p) * 0.12; this.f += (tf - this.f) * 0.1;
+  this.vol += this.f * 0.1;
+  r[1405] = Math.round(t * 10); r[1410] = Math.round(this.p * 10);
+  r[1411] = Math.round(this.vol); r[1417] = Math.floor(t); r[1422] = Math.round(this.f);
+};
+SimTransport.prototype.write = function (bytes) {
+  var b = Array.prototype.slice.call(bytes), self = this, r = this.regs, reply;
+  var addr = (b[2] << 8) | b[3], n = (b[4] << 8) | b[5], i;
+  if (b[1] === 3) {
+    reply = [1, 3, n * 2];
+    for (i = 0; i < n; i++) { var v = r[addr + i] || 0; reply.push(v >> 8, v & 255); }
+  } else if (b[1] === 6) { r[addr] = n; reply = b.slice(0, 6); }
+  else if (b[1] === 0x10) {
+    for (i = 0; i < n; i++) r[addr + i] = (b[7 + i * 2] << 8) | b[8 + i * 2];
+    for (var k in KEY_BASE) if (KEY_BASE[k] === addr) this.lastKey = +k;
+    reply = b.slice(0, 6);
+  } else if (b[1] === 5) {
+    if (n === 0xFF00 && addr === COIL_BREW) {
+      this.brewing = !this.brewing;
+      if (this.brewing) { this.t0 = Date.now(); this.p = 0; this.f = 0; this.vol = 0; r[1405] = 0; r[1411] = 0; r[1417] = 0; }
+    }
+    if (n === 0xFF00 && addr === COIL_FLUSH) this.flushUntil = Date.now() + 4000;
+    reply = b.slice(0, 6);
+  } else reply = [1, b[1] | 0x80, 1];
+  var out = frame(reply), cut = Math.min(out.length, 20);   // trả lời thành 2 mảnh để thử ghép khung
+  setTimeout(function () { if (self.onData) self.onData(out.slice(0, cut)); }, 15);
+  if (cut < out.length) setTimeout(function () { if (self.onData) self.onData(out.slice(cut)); }, 30);
+  return Promise.resolve();
+};
+
+/* ═════════════ Lưu trữ ═════════════ */
+function load(key, def) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { toast('Bộ nhớ trình duyệt đầy hoặc bị chặn – không lưu được.'); return false; } }
+var profiles = load('lita.profiles', null) || [
+  {id: 'p1', name: 'Cổ điển 9 bar', stop: 'flow', total: 40, key: 1,
+   stages: [{time: 6, prio: 'p', value: 3, wait: 0}, {time: 30, prio: 'p', value: 9, wait: 0}]},
+  {id: 'p2', name: 'Giảm áp dần', stop: 'flow', total: 40, key: 2,
+   stages: [{time: 5, prio: 'p', value: 3, wait: 0}, {time: 10, prio: 'p', value: 9, wait: 0}, {time: 20, prio: 'p', value: 6, wait: 0}]}
+];
+var shotLog = load('lita.history', []);
+var MAX_HISTORY = 60;
+
+/* ═════════════ Tiện ích giao diện ═════════════ */
+function $(id) { return document.getElementById(id); }
+var toastTimer;
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
+}
+function ask(title, text, okLabel, danger) {
+  return new Promise(function (resolve) {
+    $('mTitle').textContent = title; $('mText').textContent = text;
+    var ok = $('mOk'); ok.textContent = okLabel || 'OK'; ok.className = 'btn grow ' + (danger ? 'danger' : 'primary');
+    $('modal').classList.add('show');
+    var done = function (v) { $('modal').classList.remove('show'); ok.onclick = null; $('mCancel').onclick = null; resolve(v); };
+    ok.onclick = function () { done(true); }; $('mCancel').onclick = function () { done(false); };
+  });
+}
+function fmt(n, d) { return (n == null || isNaN(n)) ? '–' : n.toFixed(d).replace('.', ','); }
+
+/* Biểu đồ đường đơn giản trên canvas. series: [{color, pts:[[x,y],…], step}] */
+function drawChart(canvas, series, xMax, yMax) {
+  var dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  var c = canvas.getContext('2d'); c.scale(dpr, dpr);
+  var L = 26, R = 6, T = 6, B = 18, pw = w - L - R, ph = h - T - B;
+  var X = function (x) { return L + x / xMax * pw; }, Y = function (y) { return T + ph - y / yMax * ph; };
+  c.font = '10px -apple-system, sans-serif'; c.fillStyle = '#a8998b'; c.strokeStyle = '#3d322a'; c.lineWidth = 1;
+  var i, yStep = yMax <= 6 ? 1 : 3, xStep = xMax <= 40 ? 10 : (xMax <= 90 ? 15 : 30);
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  for (i = 0; i <= yMax; i += yStep) { c.beginPath(); c.moveTo(L, Y(i)); c.lineTo(w - R, Y(i)); c.stroke(); c.fillText(i, L - 5, Y(i)); }
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (i = 0; i <= xMax; i += xStep) c.fillText(i + 's', X(i), h - B + 5);
+  series.forEach(function (s) {
+    if (!s.pts.length) return;
+    c.strokeStyle = s.color; c.lineWidth = 2; c.lineJoin = 'round'; c.beginPath();
+    s.pts.forEach(function (p, k) {
+      var x = X(Math.min(p[0], xMax)), y = Y(Math.min(p[1], yMax));
+      if (k === 0) c.moveTo(x, y);
+      else { if (s.step) c.lineTo(x, Y(Math.min(s.pts[k - 1][1], yMax))); c.lineTo(x, y); }
+    });
+    c.stroke();
+  });
+}
+function shotSeries(samples) {
+  return [{color: '#f08a5d', pts: samples.map(function (s) { return [s[0], s[1]]; })},
+          {color: '#5db7f0', pts: samples.map(function (s) { return [s[0], s[2]]; }), step: true}];
+}
+function xMaxFor(t) { return Math.max(30, Math.ceil((t + 2) / 10) * 10); }
+
+/* ═════════════ Trạng thái kết nối & đo lường ═════════════ */
+var link = null, transport = null, connected = false, pollFails = 0;
+var brewing = false, shot = null, lastDs = null, lastActive = 0, flushAt = 0, lastSentName = '';
+var liveSamples = [];
+
+function setConnected(on, label, demo) {
+  connected = on;
+  var chip = $('connChip'); chip.textContent = label; chip.className = 'chip' + (on ? (demo ? ' demo' : ' on') : '');
+  $('btnBrew').disabled = !on; $('btnFlush').disabled = !on;
+  $('btnConnect').textContent = on ? 'Ngắt kết nối' : 'Kết nối máy';
+  $('btnConnect').className = 'btn grow' + (on ? '' : ' primary');
+  $('btnDemo').style.display = on ? 'none' : '';
+  $('connectNote').style.display = on ? 'none' : '';
+  if (!on) { ['vP', 'vF', 'vV', 'vT', 'vB', 'vS'].forEach(function (id) { $(id).textContent = '–'; }); setBrewing(false); }
+}
+function setBrewing(on) {
+  brewing = on;
+  var b = $('btnBrew'); b.textContent = on ? 'Dừng' : 'Bắt đầu pha'; b.className = 'btn grow ' + (on ? 'danger' : 'primary');
+}
+function start(tr, demo, acceptAll) {
+  transport = tr; link = new Link(tr); pollFails = 0; lastDs = null;
+  tr.onDisconnect = function () { if (transport === tr) { teardown(); toast('Mất kết nối với máy.'); } };
+  $('connChip').textContent = 'Đang kết nối…';
+  return tr.connect(acceptAll).then(function () {
+    return link.readRegs(REG_TELEMETRY, TELEMETRY_LEN);
+  }).then(function (regs) {
+    setConnected(true, demo ? 'Chạy thử' : tr.name, demo);
+    onTelemetry(regs); poll(tr);
+  }).catch(function (e) {
+    teardown();
+    if (e && e.name === 'NotFoundError') return;             // người dùng huỷ hộp chọn thiết bị
+    toast('Không kết nối được: ' + (e && e.message ? e.message : e));
+  });
+}
+function teardown() {
+  var tr = transport; transport = null; link = null;
+  if (tr) tr.disconnect();
+  finishShot(); setConnected(false, 'Chưa kết nối');
+}
+function poll(tr) {
+  if (transport !== tr) return;
+  link.readRegs(REG_TELEMETRY, TELEMETRY_LEN).then(function (regs) {
+    pollFails = 0; if (transport === tr) onTelemetry(regs);
+  }, function (e) {
+    if (++pollFails === 8 && transport === tr) toast('Máy không phản hồi – thử ngắt và kết nối lại.');
+    $('diag').textContent = 'Lỗi đọc: ' + e.message;
+  }).then(function () { setTimeout(function () { poll(tr); }, 250); });
+}
+function onTelemetry(r) {
+  var ds = r[1], steam = r[4] / 10, brew = r[5] / 10, p = r[6] / 10, vol = r[7], secs = r[13], flow = r[18];
+  var now = Date.now();
+  $('vP').textContent = fmt(p, 1); $('vF').textContent = fmt(flow, 0); $('vV').textContent = fmt(vol, 0);
+  $('vT').textContent = fmt(ds / 10, 1); $('vB').textContent = fmt(brew, 1); $('vS').textContent = fmt(steam, 1);
+  $('diag').textContent = 'reg 1404+: ' + r.join(' ');
+  var flushing = now - flushAt < 15000;
+  var moving = lastDs !== null && ds !== lastDs && ds > 0;
+  var active = moving || p > 0;
+  lastDs = ds;
+  if (active) lastActive = now;
+  if (!shot && active && !flushing) {
+    shot = {start: now, samples: [], peak: 0, profile: lastSentName};
+    liveSamples = shot.samples; setBrewing(true); $('chartTitle').textContent = 'Đang chiết…';
+  }
+  if (shot) {
+    var t = Math.round((now - shot.start) / 100) / 10;
+    shot.samples.push([t, p, flow, vol]); shot.peak = Math.max(shot.peak, p); shot.vol = vol; shot.brewTemp = brew;
+    drawChart($('liveChart'), shotSeries(shot.samples), xMaxFor(t), 12);
+    if (now - lastActive > 2000) finishShot();
+  }
+}
+function finishShot() {
+  if (!shot) return;
+  var s = shot; shot = null; setBrewing(false); $('chartTitle').textContent = 'Lần pha gần nhất';
+  while (s.samples.length && s.samples[s.samples.length - 1][1] === 0 && s.samples[s.samples.length - 1][2] === 0) s.samples.pop();
+  var dur = s.samples.length ? s.samples[s.samples.length - 1][0] : 0;
+  if (dur < 5 || s.peak < 1) return;
+  shotLog.unshift({id: 'h' + s.start, date: s.start, profile: s.profile, duration: dur, volume: s.vol, peak: s.peak, brewTemp: s.brewTemp, note: '', samples: s.samples});
+  if (shotLog.length > MAX_HISTORY) shotLog.length = MAX_HISTORY;
+  save('lita.history', shotLog); renderHistory();
+  toast('Đã lưu lần pha vào Lịch sử.');
+}
+
+$('btnConnect').onclick = function () {
+  if (connected || transport) return teardown();
+  if (!navigator.bluetooth) return toast('Cần mở trang này bằng Bluefy để dùng Bluetooth.');
+  start(new BleTransport(), false, false);
+};
+$('lnkAll').onclick = function (e) {
+  e.preventDefault();
+  if (!navigator.bluetooth) return toast('Cần mở trang này bằng Bluefy để dùng Bluetooth.');
+  if (!transport) start(new BleTransport(), false, true);
+};
+$('btnDemo').onclick = function () { if (!transport) start(new SimTransport(), true); };
+$('btnBrew').onclick = function () {
+  if (!link) return;
+  var go = function () {
+    return link.pressCoil(COIL_BREW).catch(function (e) { toast('Lệnh không tới máy: ' + e.message + '. Kiểm tra máy trước khi bấm lại.'); });
+  };
+  if (brewing) return go();
+  ask('Bắt đầu pha?', 'Máy sẽ bơm nước nóng ngay. Hãy chắc là tay pha đã lắp và cốc đã đặt.', 'Pha').then(function (ok) { if (ok) go(); });
+};
+$('btnFlush').onclick = function () {
+  if (!link) return;
+  ask('Xả rửa group head?', 'Nước nóng sẽ chảy ra từ group head.', 'Xả').then(function (ok) {
+    if (!ok) return;
+    flushAt = Date.now();
+    link.pressCoil(COIL_FLUSH).catch(function (e) { toast('Lệnh không tới máy: ' + e.message); });
+  });
+};
+
+/* ═════════════ Tab ═════════════ */
+Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (b) {
+  b.onclick = function () {
+    Array.prototype.forEach.call(document.querySelectorAll('nav button'), function (x) { x.classList.toggle('active', x === b); });
+    Array.prototype.forEach.call(document.querySelectorAll('main section'), function (s) { s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab); });
+    redraw();
+  };
+});
+function redraw() {
+  drawChart($('liveChart'), shotSeries(liveSamples), xMaxFor(liveSamples.length ? liveSamples[liveSamples.length - 1][0] : 0), 12);
+  if (editing) drawProfileChart();
+  if (viewing) drawHistChart();
+}
+window.addEventListener('resize', redraw);
+
+/* ═════════════ Công thức ═════════════ */
+var editing = null;
+function renderProfiles() {
+  var box = $('profileItems'); box.innerHTML = '';
+  if (!profiles.length) box.innerHTML = '<p class="note">Chưa có công thức nào.</p>';
+  profiles.forEach(function (p) {
+    var el = document.createElement('div'); el.className = 'item';
+    var dur = p.stages.reduce(function (a, s) { return a + s.time + s.wait; }, 0);
+    el.innerHTML = '<div class="grow"><div class="t"></div><div class="s"></div></div><button class="btn small">Sửa</button>';
+    el.querySelector('.t').textContent = p.name || 'Chưa đặt tên';
+    el.querySelector('.s').textContent = p.stages.length + ' giai đoạn · tối đa ' + dur + ' s · dừng ở ' + p.total + (p.stop === 'weight' ? ' g' : ' mL');
+    el.querySelector('button').onclick = function () { openProfile(p); };
+    box.appendChild(el);
+  });
+}
+function openProfile(p) {
+  editing = p;
+  $('profileList').style.display = 'none'; $('profileEdit').style.display = '';
+  $('pName').value = p.name; $('pStop').value = p.stop; $('pTotal').value = p.total; $('pKey').value = p.key || 1;
+  $('pTotalLbl').textContent = p.stop === 'weight' ? 'Tổng khối lượng (g)' : 'Tổng thể tích (mL)';
+  renderStages();
+}
+function closeProfile() { editing = null; $('profileList').style.display = ''; $('profileEdit').style.display = 'none'; renderProfiles(); }
+function persistProfiles() { save('lita.profiles', profiles); }
+function num(v) { return parseFloat(String(v).replace(',', '.')); }
+function renderStages() {
+  var box = $('stages'); box.innerHTML = '';
+  editing.stages.forEach(function (s, i) {
+    var last = i === editing.stages.length - 1;
+    var el = document.createElement('div'); el.className = 'stage';
+    el.innerHTML = '<div class="head"><span>Giai đoạn ' + (i + 1) + '</span><button class="btn small">Bỏ</button></div>' +
+      '<div class="cols4">' +
+      '<div><label>Giây</label><input type="number" inputmode="numeric" data-k="time"></div>' +
+      '<div><label>Ưu tiên</label><select data-k="prio"><option value="p">Áp suất</option><option value="f">Lưu lượng</option></select></div>' +
+      '<div><label class="unit"></label><input type="number" inputmode="decimal" step="0.1" data-k="value"></div>' +
+      '<div><label>Nghỉ (s)</label><input type="number" inputmode="numeric" data-k="wait"></div></div>';
+    var unit = el.querySelector('.unit');
+    var setUnit = function () { unit.textContent = s.prio === 'p' ? 'bar' : 'mL/s'; };
+    setUnit();
+    Array.prototype.forEach.call(el.querySelectorAll('[data-k]'), function (inp) {
+      var k = inp.dataset.k; inp.value = s[k];
+      if (k === 'wait' && last) { inp.disabled = true; inp.value = 0; }
+      inp.onchange = function () {
+        s[k] = k === 'prio' ? inp.value : num(inp.value);
+        if (k === 'prio') setUnit();
+        persistProfiles(); drawProfileChart();
+      };
+    });
+    el.querySelector('.head button').onclick = function () {
+      if (editing.stages.length <= 1) return toast('Cần ít nhất một giai đoạn.');
+      editing.stages.splice(i, 1); persistProfiles(); renderStages();
+    };
+    box.appendChild(el);
+  });
+  $('btnAddStage').disabled = editing.stages.length >= MAX_STAGES;
+  drawProfileChart();
+}
+function drawProfileChart() {
+  var t = 0, pp = [], fp = [];
+  editing.stages.forEach(function (s) {
+    var v = isNaN(s.value) ? 0 : s.value, d = isNaN(s.time) ? 0 : s.time, w = isNaN(s.wait) ? 0 : s.wait;
+    (s.prio === 'p' ? pp : fp).push([t, v], [t + d, v]);
+    (s.prio === 'p' ? fp : pp).push([t, 0], [t + d, 0]);
+    t += d;
+    if (w) { pp.push([t, 0], [t + w, 0]); fp.push([t, 0], [t + w, 0]); t += w; }
+  });
+  drawChart($('profChart'), [{color: '#f08a5d', pts: pp, step: true}, {color: '#5db7f0', pts: fp, step: true}], xMaxFor(t), 12);
+}
+$('btnNewProfile').onclick = function () {
+  var p = {id: 'p' + Date.now(), name: 'Công thức mới', stop: 'flow', total: 40, key: 1,
+           stages: [{time: 6, prio: 'p', value: 3, wait: 0}, {time: 30, prio: 'p', value: 9, wait: 0}]};
+  profiles.push(p); persistProfiles(); openProfile(p);
+};
+$('btnBack').onclick = closeProfile;
+$('btnDelProfile').onclick = function () {
+  ask('Xoá công thức?', '“' + editing.name + '” sẽ bị xoá khỏi điện thoại. Công thức đã lưu trên máy không bị ảnh hưởng.', 'Xoá', true).then(function (ok) {
+    if (!ok) return;
+    profiles.splice(profiles.indexOf(editing), 1); persistProfiles(); closeProfile();
+  });
+};
+$('pName').onchange = function () { editing.name = this.value.trim(); persistProfiles(); };
+$('pStop').onchange = function () { editing.stop = this.value; $('pTotalLbl').textContent = this.value === 'weight' ? 'Tổng khối lượng (g)' : 'Tổng thể tích (mL)'; persistProfiles(); };
+$('pTotal').onchange = function () { editing.total = num(this.value); persistProfiles(); };
+$('pKey').onchange = function () { editing.key = +this.value; persistProfiles(); };
+$('btnAddStage').onclick = function () {
+  if (editing.stages.length >= MAX_STAGES) return;
+  editing.stages.push({time: 10, prio: 'p', value: 6, wait: 0}); persistProfiles(); renderStages();
+};
+function doSend(andBrew) {
+  if (!link) return toast('Chưa kết nối máy.');
+  if (brewing) return toast('Máy đang pha – chờ xong rồi gửi.');
+  var p = editing, err = validateProfile(p);
+  if (err) return toast(err);
+  var key = +$('pKey').value;
+  var text = 'Công thức hiện có ở Phím ' + key + ' trên máy sẽ bị ghi đè.' + (andBrew ? ' Sau đó máy bơm nước nóng ngay – hãy chắc là tay pha đã lắp và cốc đã đặt.' : '');
+  ask(andBrew ? 'Lưu vào Phím ' + key + ' và pha?' : 'Lưu vào Phím ' + key + '?', text, andBrew ? 'Lưu & pha' : 'Lưu').then(function (ok) {
+    if (!ok) return;
+    var l = link;
+    sendProfile(l, p, key).then(function () {
+      lastSentName = p.name;
+      if (!andBrew) return toast('Đã lưu vào Phím ' + key + '.');
+      return sleep(90).then(function () { return l.pressCoil(COIL_BREW); }).then(function () {
+        document.querySelector('nav button[data-tab="live"]').click();
+      });
+    }).catch(function (e) { toast('Gửi không thành công: ' + e.message + '. Công thức trên máy có thể chỉ được ghi một phần – hãy gửi lại.'); });
+  });
+}
+$('btnSend').onclick = function () { doSend(false); };
+$('btnSendBrew').onclick = function () { doSend(true); };
+$('btnReadKey').onclick = function () {
+  if (!link) return toast('Chưa kết nối máy.');
+  var key = +$('readKey').value;
+  readProfile(link, key).then(function (res) {
+    var p = res.profile; p.id = 'p' + Date.now(); p.name = 'Từ máy – Phím ' + key; p.key = key;
+    profiles.push(p); persistProfiles(); openProfile(p);
+    if (!res.standard) toast('Phím này đang lưu kiểu công thức khác (không phải biến áp nhiều giai đoạn) – số liệu hiển thị có thể không đúng.');
+  }).catch(function (e) { toast('Không đọc được: ' + e.message); });
+};
+
+/* ═════════════ Lịch sử ═════════════ */
+var viewing = null;
+function dateStr(ms) {
+  var d = new Date(ms), z = function (n) { return ('0' + n).slice(-2); };
+  return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+}
+function renderHistory() {
+  var box = $('histItems'); box.innerHTML = '';
+  if (!shotLog.length) { box.innerHTML = '<p class="note">Chưa có lần pha nào. Các lần pha khi đang kết nối sẽ tự xuất hiện ở đây.</p>'; return; }
+  shotLog.forEach(function (h) {
+    var el = document.createElement('div'); el.className = 'item';
+    el.innerHTML = '<div class="grow"><div class="t"></div><div class="s"></div></div><button class="btn small">Xem</button>';
+    el.querySelector('.t').textContent = dateStr(h.date) + (h.profile ? ' · ' + h.profile : '');
+    el.querySelector('.s').textContent = fmt(h.duration, 1) + ' s · ' + h.volume + ' mL · đỉnh ' + fmt(h.peak, 1) + ' bar' + (h.note ? ' · ' + h.note : '');
+    el.querySelector('button').onclick = function () { openShot(h); };
+    box.appendChild(el);
+  });
+}
+function openShot(h) {
+  viewing = h; $('histList').style.display = 'none'; $('histDetail').style.display = '';
+  $('hTitle').textContent = dateStr(h.date) + (h.profile ? ' · ' + h.profile : '');
+  $('hSub').textContent = fmt(h.duration, 1) + ' s · ' + h.volume + ' mL · đỉnh ' + fmt(h.peak, 1) + ' bar · nồi pha ' + fmt(h.brewTemp, 1) + ' °C';
+  $('hNote').value = h.note || ''; drawHistChart();
+}
+function drawHistChart() { drawChart($('histChart'), shotSeries(viewing.samples), xMaxFor(viewing.duration), 12); }
+function closeShot() { viewing = null; $('histList').style.display = ''; $('histDetail').style.display = 'none'; renderHistory(); }
+$('btnHistBack').onclick = closeShot;
+$('hNote').onchange = function () { viewing.note = this.value.trim(); save('lita.history', shotLog); };
+$('btnHistDel').onclick = function () {
+  ask('Xoá lần pha này?', 'Không khôi phục lại được.', 'Xoá', true).then(function (ok) {
+    if (!ok) return;
+    shotLog.splice(shotLog.indexOf(viewing), 1); save('lita.history', shotLog); closeShot();
+  });
+};
+$('btnHistCsv').onclick = function () {
+  var csv = 'giay,ap_suat_bar,luu_luong_ml_s,the_tich_ml\n' + viewing.samples.map(function (s) { return s.join(','); }).join('\n');
+  var done = function () { toast('Đã chép dữ liệu CSV vào bộ nhớ tạm.'); };
+  var fallback = function () {
+    var ta = document.createElement('textarea'); ta.value = csv; document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (ok) done(); else toast('Trình duyệt không cho chép vào bộ nhớ tạm.');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(done, fallback); else fallback();
+};
+
+/* ═════════════ Khởi động ═════════════ */
+if (!navigator.bluetooth) $('noBle').style.display = '';
+renderProfiles(); renderHistory(); redraw();
+window.Lita = {crc16: crc16, frame: frame, hex: hex, encodeProfile: encodeProfile, decodeProfile: decodeProfile, validateProfile: validateProfile};
+</script>
+</body>
+</html>
